@@ -2,6 +2,9 @@
 
 Real-time sentiment analysis application using NLP/ML. Fetches social media data, analyzes sentiment with Hugging Face Transformers, and displays results in an interactive dashboard.
 
+![Sentiment Analysis Dashboard](docs/images/sa1.png "Dashboard View")
+![Sentiment Analysis Dashboard](docs/images/sa2.png "Table View")
+
 ## Tech Stack
 
 - **Backend:** Python 3.9+, FastAPI, Motor (async MongoDB)

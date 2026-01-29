@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Sentiment analysis worker using Hugging Face Transformers",
   "scripts": {
-    "dev": "cd .. && ./worker/venv/bin/python -m worker.main --dry-run",
+    "dev": "cd .. && ./worker/venv/bin/python -m worker.main --keyword AI --limit 20",
     "start": "cd .. && ./worker/venv/bin/python -m worker.main"
   }
 }
