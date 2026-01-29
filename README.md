@@ -4,7 +4,7 @@ Real-time sentiment analysis application using NLP/ML. Fetches social media data
 
 ## Tech Stack
 
-- **Backend:** Python 3.12, FastAPI, Motor (async MongoDB)
+- **Backend:** Python 3.9+, FastAPI, Motor (async MongoDB)
 - **Frontend:** React 19, Vite, TypeScript, Tailwind CSS, Chart.js
 - **ML/NLP:** Hugging Face Transformers (DistilBERT)
 - **Database:** MongoDB Atlas
@@ -50,7 +50,7 @@ Real-time sentiment analysis application using NLP/ML. Fetches social media data
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.9+
 - Node.js 20+
 - npm 10+
 - MongoDB Atlas account
@@ -64,6 +64,8 @@ git clone <repo-url>
 cd ai-sentiment-analysis-demo
 npm run setup
 ```
+
+This creates virtual environments (`venv/`) in both `backend/` and `worker/` directories and installs all dependencies.
 
 2. **Configure environment variables:**
 
@@ -83,6 +85,26 @@ npm run dev
 
 - Backend API: http://localhost:8000
 - Frontend Dashboard: http://localhost:5173
+
+### Manual Setup (Alternative)
+
+If you prefer to set up environments manually:
+
+```bash
+# Backend
+cd backend
+python3 -m venv venv
+./venv/bin/pip install -r requirements.txt
+
+# Worker
+cd ../worker
+python3 -m venv venv
+./venv/bin/pip install -r requirements.txt
+
+# Frontend
+cd ../frontend
+npm install
+```
 
 ## Available Commands
 
@@ -104,16 +126,18 @@ Run from the root directory:
 Run the worker directly for manual data ingestion:
 
 ```bash
+# From project root (uses venv automatically)
+npm run worker
+
+# Or run directly with venv
 cd worker
+./venv/bin/python -m worker.main --keyword "AI" --limit 50 --dry-run
 
-# Dry run (analyze but don't save)
-python -m worker.main --keyword "AI" --limit 50 --dry-run
-
-# Full run (save to backend)
-python -m worker.main --keyword "technology" --limit 100
+# From project root with module syntax
+./worker/venv/bin/python -m worker.main --keyword "technology" --limit 100
 
 # With verbose logging
-python -m worker.main --keyword "AI" -v
+./worker/venv/bin/python -m worker.main --keyword "AI" -v
 ```
 
 | Flag | Description | Default |
