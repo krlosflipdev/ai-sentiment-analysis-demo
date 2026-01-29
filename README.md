@@ -13,9 +13,16 @@ Real-time sentiment analysis application using NLP/ML. Fetches social media data
 ## Project Structure
 
 ```
-/backend     # FastAPI REST API
-/frontend    # React Dashboard
-/worker      # Sentiment analysis worker (GitHub Actions)
+/backend              # FastAPI REST API
+  /app
+    /database         # MongoDB connection (Motor async)
+    /models           # Pydantic models (sentiment, stats, errors)
+    /routes           # API endpoints (sentiments, stats)
+    /services         # Business logic layer
+    /exceptions       # Custom exception handlers
+  main.py             # FastAPI application entry point
+/frontend             # React Dashboard
+/worker               # Sentiment analysis worker (GitHub Actions)
 ```
 
 ## Quick Start
@@ -128,10 +135,86 @@ mongodb+srv://username:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w
 
 ## API Endpoints
 
+### Health
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/api/v1/health` | API v1 health check |
+| GET | `/health` | Root health check |
+| GET | `/api/v1/health` | API v1 health check with version info |
+
+### Sentiments
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/sentiments` | List sentiments (paginated) |
+| GET | `/api/v1/sentiments/{id}` | Get single sentiment by ID |
+
+**Query Parameters for `/api/v1/sentiments`:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `page` | int | Page number (default: 1) |
+| `limit` | int | Items per page (default: 20, max: 100) |
+| `sentiment` | string | Filter by sentiment: `positive`, `negative`, `neutral` |
+| `source` | string | Filter by source (e.g., `twitter`) |
+| `date_from` | datetime | Filter records from this date (ISO 8601) |
+| `date_to` | datetime | Filter records until this date (ISO 8601) |
+
+### Statistics
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/stats/summary` | Aggregated sentiment statistics |
+| GET | `/api/v1/stats/timeline` | Time series data for charts |
+
+**Query Parameters for `/api/v1/stats/timeline`:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `date_from` | datetime | Start date filter (ISO 8601) |
+| `date_to` | datetime | End date filter (ISO 8601) |
+| `granularity` | string | Time bucket: `hour`, `day`, `week`, `month` (default: `day`) |
+
+### Response Formats
+
+**Paginated Response:**
+```json
+{
+  "data": [...],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 100,
+    "total_pages": 5
+  }
+}
+```
+
+**Single Item Response:**
+```json
+{
+  "data": { ... }
+}
+```
+
+**Error Response:**
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Sentiment with id 'abc123' not found",
+    "details": []
+  }
+}
+```
+
+### API Documentation
+
+Interactive API documentation is available when the backend is running:
+
+- **Swagger UI:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
+- **OpenAPI JSON:** http://localhost:8000/openapi.json
 
 ## License
 
