@@ -47,3 +47,6 @@ build/
 htmlcov/
 .coverage
 coverage.xml
+
+# Turborepo
+.turbo
