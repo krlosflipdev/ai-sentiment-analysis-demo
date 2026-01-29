@@ -1,5 +1,6 @@
 """Sentiment service for database operations."""
 
+from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 
 from bson import ObjectId
@@ -7,7 +8,12 @@ from bson.errors import InvalidId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.exceptions import NotFoundError, ValidationError
-from app.models.sentiment import SentimentFilter, SentimentRecord
+from app.models.sentiment import (
+    BatchCreateResult,
+    SentimentCreate,
+    SentimentFilter,
+    SentimentRecord,
+)
 
 
 class SentimentService:
@@ -82,6 +88,91 @@ class SentimentService:
             raise NotFoundError("Sentiment", sentiment_id)
 
         return self._doc_to_model(doc)
+
+    async def create(self, data: SentimentCreate) -> SentimentRecord:
+        """Create a new sentiment record.
+
+        Args:
+            data: The sentiment data to create.
+
+        Returns:
+            The created sentiment record.
+        """
+        doc = {
+            "text": data.text,
+            "sentiment": data.sentiment,
+            "score": data.score,
+            "source": data.source,
+            "source_id": data.source_id,
+            "created_at": datetime.now(timezone.utc),
+        }
+
+        result = await self.collection.insert_one(doc)
+        doc["_id"] = result.inserted_id
+
+        return self._doc_to_model(doc)
+
+    async def create_batch(
+        self, records: List[SentimentCreate]
+    ) -> BatchCreateResult:
+        """Create multiple sentiment records with deduplication.
+
+        Records with a source_id that already exists for the same source
+        will be skipped. Records without source_id are always created.
+
+        Args:
+            records: List of sentiment records to create.
+
+        Returns:
+            Result with created and skipped counts.
+        """
+        # Separate records with and without source_id
+        records_with_id = [r for r in records if r.source_id]
+        records_without_id = [r for r in records if not r.source_id]
+
+        skipped_count = 0
+        to_insert = []
+
+        # Check for existing source_ids to avoid duplicates
+        if records_with_id:
+            existing_ids = set()
+            for record in records_with_id:
+                existing = await self.collection.find_one(
+                    {"source": record.source, "source_id": record.source_id}
+                )
+                if existing:
+                    existing_ids.add((record.source, record.source_id))
+
+            for record in records_with_id:
+                if (record.source, record.source_id) in existing_ids:
+                    skipped_count += 1
+                else:
+                    to_insert.append(record)
+
+        # Add records without source_id (always create)
+        to_insert.extend(records_without_id)
+
+        created_count = 0
+        if to_insert:
+            now = datetime.now(timezone.utc)
+            docs = [
+                {
+                    "text": r.text,
+                    "sentiment": r.sentiment,
+                    "score": r.score,
+                    "source": r.source,
+                    "source_id": r.source_id,
+                    "created_at": now,
+                }
+                for r in to_insert
+            ]
+            result = await self.collection.insert_many(docs)
+            created_count = len(result.inserted_ids)
+
+        return BatchCreateResult(
+            created_count=created_count,
+            skipped_count=skipped_count,
+        )
 
     def _build_filter_query(self, filters: SentimentFilter) -> Dict:
         """Build MongoDB query from filter parameters.

@@ -1,0 +1,62 @@
+name: Sentiment Analysis Worker
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    # Allow manual trigger with inputs
+    inputs:
+      keyword:
+        description: 'Search keyword'
+        required: false
+        default: 'AI'
+      limit:
+        description: 'Maximum posts to fetch per source'
+        required: false
+        default: '100'
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: worker/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          cd worker
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run worker
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+        run: |
+          cd worker
+          python -m worker.main \
+            --keyword "${{ github.event.inputs.keyword || 'AI' }}" \
+            --limit "${{ github.event.inputs.limit || '100' }}"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-logs-${{ github.run_id }}
+          path: worker/*.log
+          retention-days: 7
+          if-no-files-found: ignore

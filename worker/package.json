@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Sentiment analysis worker using Hugging Face Transformers",
   "scripts": {
-    "dev": "python3 -u worker.py",
-    "start": "python3 worker.py"
+    "dev": "python3 -u -m worker.main --dry-run",
+    "start": "python3 -m worker.main"
   }
 }

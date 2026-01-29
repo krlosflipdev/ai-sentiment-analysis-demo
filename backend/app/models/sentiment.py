@@ -1,7 +1,7 @@
 """Sentiment domain models."""
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -103,3 +103,59 @@ class SentimentFilter(BaseModel):
     source: Optional[str] = None
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
+
+
+class SentimentCreate(BaseModel):
+    """Request model for creating a sentiment record.
+
+    Attributes:
+        text: The text that was analyzed.
+        sentiment: The sentiment classification result.
+        score: Confidence score from the model (0-1).
+        source: Data source identifier (e.g., twitter, reddit).
+        source_id: Optional unique ID from the source for deduplication.
+    """
+
+    text: str = Field(..., min_length=1, max_length=5000, description="Analyzed text")
+    sentiment: SentimentLabel = Field(..., description="Sentiment classification")
+    score: float = Field(..., ge=0, le=1, description="Confidence score (0-1)")
+    source: str = Field(..., min_length=1, max_length=50, description="Data source")
+    source_id: Optional[str] = Field(
+        None, max_length=100, description="Unique ID from source for deduplication"
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "text": "I love this product!",
+                "sentiment": "positive",
+                "score": 0.95,
+                "source": "twitter",
+                "source_id": "1234567890",
+            }
+        }
+    }
+
+
+class SentimentBatchCreate(BaseModel):
+    """Request model for batch creating sentiment records.
+
+    Attributes:
+        records: List of sentiment records to create (max 100).
+    """
+
+    records: List[SentimentCreate] = Field(
+        ..., min_length=1, max_length=100, description="Records to create"
+    )
+
+
+class BatchCreateResult(BaseModel):
+    """Response model for batch create operation.
+
+    Attributes:
+        created_count: Number of records successfully created.
+        skipped_count: Number of records skipped (duplicates).
+    """
+
+    created_count: int = Field(..., ge=0, description="Records created")
+    skipped_count: int = Field(..., ge=0, description="Duplicates skipped")

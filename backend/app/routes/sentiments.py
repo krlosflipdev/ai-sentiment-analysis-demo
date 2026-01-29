@@ -9,7 +9,14 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.config import settings
 from app.database import get_database
 from app.models.base import PaginatedResponse, PaginationMeta, SingleResponse
-from app.models.sentiment import SentimentFilter, SentimentLabel, SentimentRecord
+from app.models.sentiment import (
+    BatchCreateResult,
+    SentimentBatchCreate,
+    SentimentCreate,
+    SentimentFilter,
+    SentimentLabel,
+    SentimentRecord,
+)
 from app.services.sentiment_service import SentimentService
 
 router = APIRouter(prefix="/api/v1/sentiments", tags=["Sentiments"])
@@ -91,3 +98,46 @@ async def get_sentiment(
     record = await service.get_by_id(sentiment_id)
 
     return SingleResponse(data=record)
+
+
+@router.post("", response_model=SingleResponse[SentimentRecord], status_code=201)
+async def create_sentiment(
+    payload: SentimentCreate,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+) -> SingleResponse[SentimentRecord]:
+    """Create a new sentiment record.
+
+    Args:
+        payload: The sentiment data to create.
+        db: Database instance (injected).
+
+    Returns:
+        The created sentiment record wrapped in a response object.
+    """
+    service = SentimentService(db)
+    record = await service.create(payload)
+
+    return SingleResponse(data=record)
+
+
+@router.post("/batch", response_model=SingleResponse[BatchCreateResult], status_code=201)
+async def create_sentiments_batch(
+    payload: SentimentBatchCreate,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+) -> SingleResponse[BatchCreateResult]:
+    """Create multiple sentiment records with deduplication.
+
+    Records with a source_id that already exists for the same source
+    will be skipped. Records without source_id are always created.
+
+    Args:
+        payload: The batch of sentiment records to create.
+        db: Database instance (injected).
+
+    Returns:
+        Result with created and skipped counts.
+    """
+    service = SentimentService(db)
+    result = await service.create_batch(payload.records)
+
+    return SingleResponse(data=result)
