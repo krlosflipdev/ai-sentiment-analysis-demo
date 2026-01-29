@@ -1,0 +1,22 @@
+{
+  "name": "ai-sentiment-analysis-demo",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "npm@10.9.4",
+  "description": "Full-stack application for real-time sentiment analysis using NLP/ML",
+  "workspaces": ["frontend", "backend", "worker"],
+  "scripts": {
+    "dev": "turbo run dev --ui tui",
+    "dev:stream": "concurrently -n \"→ API,→ WEB,→ WORKER\" -c \"yellow,cyan,magenta\" \"npm run dev -w backend\" \"npm run dev -w frontend\" \"npm run dev -w worker\"",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "backend": "npm run dev -w backend",
+    "frontend": "npm run dev -w frontend",
+    "worker": "npm run dev -w worker",
+    "setup": "./scripts/setup.sh"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "concurrently": "^9.1.0"
+  }
+}

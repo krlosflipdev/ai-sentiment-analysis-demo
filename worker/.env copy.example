@@ -1,0 +1,8 @@
+# MongoDB connection string
+MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/sentiment
+
+# Twitter/X API
+TWITTER_BEARER_TOKEN=your_bearer_token
+
+# Hugging Face
+HUGGINGFACE_API_KEY=hf_your_api_key
